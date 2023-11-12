@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LoginController {
 
-
     @Data
     public static class LoginRequest{
         private String username;
@@ -23,12 +22,11 @@ public class LoginController {
     private final UserService userService;
 
     @PostMapping("/login")
-    public BaseResponse<Void> login(@RequestBody LoginRequest loginRequest, HttpSession session) {
+    public void login(@RequestBody LoginRequest loginRequest, HttpSession session) {
 
         User user = userService.getUserByUsernameAndPassword(loginRequest.getUsername(), loginRequest.getPassword());
 
         session.setAttribute("loginInfo", new LoginInfo(user));
-        return BaseResponse.ok();
     }
 
     @PostMapping("/logout")

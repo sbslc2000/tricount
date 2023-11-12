@@ -13,6 +13,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
+//Entity JDBC
+//
 public class Settlement extends Entity {
 
     private String title;

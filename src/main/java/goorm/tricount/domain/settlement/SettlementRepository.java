@@ -1,5 +1,7 @@
 package goorm.tricount.domain.settlement;
 
+import goorm.tricount.api.ErrorCode;
+import goorm.tricount.api.exception.ServerFaultException;
 import goorm.tricount.domain.expense.Expense;
 import goorm.tricount.domain.settlement.model.Settlement;
 import goorm.tricount.domain.user.User;
@@ -7,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,16 +26,16 @@ public class SettlementRepository {
         return jdbcTemplate.queryForObject("select last_insert_id()", Long.class);
     }
 
-    public Optional<Settlement> findById(Long settlementId) {
+    public Settlement findById(Long settlementId) {
         String sql = "select s.id, s.title, u.id, u.username, u.password, u.nickname " +
                 "from settlement s " +
                 "join settlement_user su " +
                 "on su.settlement_id = s.id " +
                 "join user u " +
                 "on su.user_id = u.id " +
-                "where s.id = ?";
+                "where s.id = ?"; //
 
-        return Optional.ofNullable(jdbcTemplate.query(sql,
+        return jdbcTemplate.query(sql,
                 (rs) -> {
                     Settlement settlement = null;
                     while (rs.next()) {
@@ -52,13 +55,11 @@ public class SettlementRepository {
                     }
                     return settlement;
                 }
-                , settlementId));
+                , settlementId);
     }
-
-    public int deleteById(Long settlementId, Long deleterId) {
+    public void deleteById(Long settlementId, Long deleterId) {
         String sql = "delete from settlement where id = ? and creator_id = ?";
-        return jdbcTemplate.update(sql, settlementId, deleterId);
-
+        jdbcTemplate.update(sql, settlementId, deleterId);
     }
 
     public List<Settlement> findByUserId(Long userId) {
@@ -84,16 +85,16 @@ public class SettlementRepository {
 
     public void join(Long settlementId, Long userId) {
         String sql = "insert into settlement_user (settlement_id, user_id) values (?,?)";
-        int affectedRows = jdbcTemplate.update(sql, settlementId, userId);
+        jdbcTemplate.update(sql, settlementId, userId);
     }
 
     public boolean hasAuthToReadSettlement(Long settlementId, Long userId) {
         String sql = "select count(*) from settlement_user " +
                 "where settlement_id = ? and user_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, settlementId, userId) > 0;
-        
     }
 
+    //jdbc 한방 쿼리
     public Settlement findBySettlementIdWithExpenseAndUsers(Long settlementId) {
         String sql = "select s.id, s.title, u.id, u.username, u.password, u.nickname, e.id, e.title, e.amount, e.date " +
                 "from settlement s " +
@@ -101,7 +102,7 @@ public class SettlementRepository {
                 "on su.settlement_id = s.id " +
                 "join user u " +
                 "on su.user_id = u.id " +
-                "join expense e " +
+                "left join expense e " +
                 "on e.settlement_id = su.settlement_id and e.user_id = su.user_id " +
                 "where s.id = ?";
 
@@ -116,7 +117,7 @@ public class SettlementRepository {
                 }
                 //null 발생 validation 해줘야댐
                 //비어있거나, 전거랑 다를때
-                if(settlement.getUsers().isEmpty() || !isUserAlreadyInserted(settlement, rs.getLong("u.id"))) {
+                if(!isUserAlreadyInserted(settlement, rs.getLong("u.id"))) {
                     settlement.getUsers().add(new User(
                             rs.getLong("u.id"),
                             rs.getString("u.username"),
@@ -125,13 +126,23 @@ public class SettlementRepository {
                     ));
                 }
 
-                settlement.getExpenses().add(new Expense(
-                        rs.getLong("e.id"),
-                        rs.getString("e.title"),
-                        getLastInsertedUser(settlement),
-                        rs.getBigDecimal("e.amount"),
-                        rs.getDate("e.date").toLocalDate()
-                ));
+                if(rs.getLong("e.id") != 0) {
+                    settlement.getExpenses().add(new Expense(
+                            rs.getLong("e.id"),
+                            rs.getString("e.title"),
+                            settlement.getUsers().stream().filter(user -> {
+                                        try {
+                                            return user.getId().equals(rs.getLong("u.id"));
+                                        } catch (SQLException e) {
+                                            throw new ServerFaultException(ErrorCode.DATA_INTEGRITY_FAILURE);
+                                        }
+                                    }
+                            ).findFirst().orElseThrow(
+                                    () -> new ServerFaultException(ErrorCode.DATA_INTEGRITY_FAILURE)),
+                            rs.getBigDecimal("e.amount"),
+                            rs.getDate("e.date").toLocalDate()
+                    ));
+                }
             }
             return settlement;
         }, settlementId);
@@ -141,10 +152,12 @@ public class SettlementRepository {
         return settlement.getUsers().stream().anyMatch(user -> user.getId().equals(userId));
     }
 
-    private User getLastInsertedUser(Settlement settlement) {
-        return settlement.getUsers().get(settlement.getUsers().size()-1);
-    }
-    private Long getLastInsertedUserId(Settlement settlement) {
-        return getLastInsertedUser(settlement).getId();
+    public boolean hasAuthToDeleteSettlement(Long settlementId, Long deleterId) {
+        String sql = "select count(s.id) " +
+                "from settlement s " +
+                "where s.id = ? " +
+                "and creator_id = ?";
+
+        return jdbcTemplate.queryForObject(sql, Integer.class, settlementId, deleterId) > 0;
     }
 }

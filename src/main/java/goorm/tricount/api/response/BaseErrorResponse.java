@@ -1,10 +1,12 @@
 package goorm.tricount.api.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import goorm.tricount.api.ErrorCode;
 import goorm.tricount.api.exception.BaseException;
 import lombok.Getter;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @JsonPropertyOrder({"isSuccess","errorCode","message","result"})
 public class BaseErrorResponse<T> extends BaseResponseTemplate {

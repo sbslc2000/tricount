@@ -6,6 +6,8 @@ import goorm.tricount.domain.settlement.dto.CreateSettlementRequestDto;
 import goorm.tricount.domain.settlement.dto.SettlementDto;
 import goorm.tricount.domain.settlement.dto.Transfer;
 import goorm.tricount.domain.user.User;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,17 +26,18 @@ public class SettlementController {
     }
 
     @GetMapping("/{settlementId}")
-    public BaseResponse<SettlementDto.Detail> getSettlement(@PathVariable Long settlementId) {
-        SettlementDto.Detail settlement = settlementService.getSettlement(settlementId);
-        return BaseResponse.ok(settlement);
+    public SettlementDto.Detail getSettlement(
+            @PathVariable Long settlementId,
+            @LoginUser User loginUser) {
+        return settlementService.getSettlement(settlementId, loginUser);
     }
 
     @PostMapping
-    public void createAndJoinSettlement(
+    public Long createAndJoinSettlement(
             @RequestBody CreateSettlementRequestDto dto,
             @LoginUser User loginUser
     ) {
-        settlementService.createAndJoinSettlement(loginUser.getId(), dto);
+        return settlementService.createAndJoinSettlement(loginUser, dto);
     }
 
     @PostMapping("/{settlementId}/join")
@@ -42,7 +45,7 @@ public class SettlementController {
             @PathVariable Long settlementId,
             @LoginUser User loginUser
     ) {
-        settlementService.joinSettlement(settlementId, loginUser.getId());
+        settlementService.joinSettlement(settlementId, loginUser);
     }
 
     @DeleteMapping("/{settlementId}")
@@ -57,7 +60,7 @@ public class SettlementController {
     public List<Transfer> getBalance(
             @PathVariable Long settlementId,
             @LoginUser User loginUser
-            ) {
+    ) {
         return settlementService.calculateBalance(settlementId, loginUser);
     }
 }

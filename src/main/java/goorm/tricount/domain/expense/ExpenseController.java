@@ -25,13 +25,12 @@ public class ExpenseController {
         return expenseService.getExpensesBySettlementId(settlementId, loginUser);
     }
 
-
     @PostMapping
-    public void addExpense(
+    public Long addExpense(
             @LoginUser User loginUser,
             @RequestBody CreateExpenseRequestDto dto
             ) {
-        expenseService.createExpense(dto, loginUser);
+        return expenseService.createExpense(dto, loginUser);
     }
 
     @DeleteMapping("/{expenseId}")

@@ -16,14 +16,12 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public BaseResponse<UserDto> createUser(@RequestBody CreateUserRequestDto dto) {
-        UserDto user = userService.createUser(dto);
-        return BaseResponse.ok(user);
+    public UserDto createUser(@RequestBody CreateUserRequestDto dto) {
+        return userService.createUser(dto);
     }
 
     @GetMapping("/{userId}")
-    public BaseResponse<UserDto> getUser(@PathVariable Long userId) {
-        UserDto user = userService.getUser(userId);
-        return BaseResponse.ok(user);
+    public UserDto getUser(@PathVariable Long userId) {
+        return userService.getUser(userId);
     }
 }

@@ -8,5 +8,6 @@ import java.math.BigDecimal;
 public class CreateExpenseRequestDto {
     private String title;
     private Long settlementId;
+
     private BigDecimal amount;
 }
