@@ -27,8 +27,8 @@ public class ExpenseController {
 
     @PostMapping
     public Long addExpense(
-            @LoginUser User loginUser,
-            @RequestBody CreateExpenseRequestDto dto
+            @RequestBody CreateExpenseRequestDto dto,
+            @LoginUser User loginUser
             ) {
         return expenseService.createExpense(dto, loginUser);
     }

@@ -1,6 +1,8 @@
 package goorm.tricount.api;
 
 import goorm.tricount.api.response.BaseResponse;
+import goorm.tricount.common.HandlesTypes;
+import goorm.tricount.common.RepresentModel;
 import goorm.tricount.domain.settlement.SettlementRepresentationModelProcessor;
 import goorm.tricount.domain.settlement.dto.SettlementDto;
 import jakarta.annotation.PostConstruct;
@@ -10,6 +12,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.Order;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -17,8 +20,8 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -27,11 +30,17 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Order(1)
 public class HateoasWrapper implements ResponseBodyAdvice<Object> {
 
-    private final SettlementRepresentationModelProcessor settlementProcessor;
-
+    private final ApplicationContext ac;
+    private Map<Class<?>, RepresentationModelProcessor> processors = new HashMap<>();
     @PostConstruct
     public void init() {
-        System.out.println("HateoasWrapper init");
+        Map<String, RepresentationModelProcessor> representationModelProcessorMap = ac.getBeansOfType(RepresentationModelProcessor.class);
+        representationModelProcessorMap.entrySet().stream().map(Map.Entry::getValue)
+                .forEach(processor -> processors.put(getRepresentModel(processor), processor));
+    }
+
+    private Class<?> getRepresentModel(RepresentationModelProcessor processor) {
+        return processor.getClass().getAnnotation(RepresentModel.class).value();
     }
 
     @Override
@@ -42,13 +51,23 @@ public class HateoasWrapper implements ResponseBodyAdvice<Object> {
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
         if (body == null) {
-            return null;
-        }
 
-        if(body instanceof Collection<?>) {
+            return null;
+        } else if (body instanceof Collection<?>) {
+
             return body;
         } else {
-            return settlementProcessor.process(EntityModel.of((SettlementDto.Detail) body));
+            var processor = findProcessor(body.getClass());
+
+            if(processor.isPresent()) {
+                return processor.get().process(EntityModel.of(body));
+            }
+
+            return body;
         }
+    }
+
+    private Optional<RepresentationModelProcessor> findProcessor(Class<?> bodyType) {
+        return processors.entrySet().stream().filter(entry -> entry.getKey().equals(bodyType)).findFirst().map(Map.Entry::getValue);
     }
 }

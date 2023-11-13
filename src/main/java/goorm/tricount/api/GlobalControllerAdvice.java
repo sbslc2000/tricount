@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(basePackages = {"goorm.tricount.domain", "goorm.tricount.common"})
 @RequiredArgsConstructor
-@Order(1)
+@Order(2)
 public class GlobalControllerAdvice {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
