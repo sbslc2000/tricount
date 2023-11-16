@@ -5,7 +5,6 @@ import goorm.tricount.domain.expense.ExpenseController;
 import goorm.tricount.domain.expense.dto.CreateExpenseRequestDto;
 import goorm.tricount.domain.settlement.dto.SettlementDto;
 import goorm.tricount.domain.user.User;
-import org.springframework.hateoas.Affordance;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.util.ReflectionUtils;
@@ -15,7 +14,7 @@ import java.util.Objects;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RepresentModel(SettlementDto.Detail.class)
-public class SettlementRepresentationModelProcessor implements RepresentationModelProcessor<EntityModel<SettlementDto.Detail>> {
+public class SettlementHateoasProcessor implements RepresentationModelProcessor<EntityModel<SettlementDto.Detail>> {
     @Override
     public EntityModel<SettlementDto.Detail> process(EntityModel<SettlementDto.Detail> model) {
         Class<SettlementController> settlementControllerClass = SettlementController.class;
