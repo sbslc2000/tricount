@@ -11,5 +11,4 @@ import static java.lang.annotation.RetentionPolicy.*;
 @Retention(RUNTIME)
 @Component
 public @interface RepresentModel {
-    Class<?> value();
 }

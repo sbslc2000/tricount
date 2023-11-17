@@ -42,4 +42,13 @@ public class ExpenseService {
             throw new ClientFaultException(ErrorCode.PERMISSION_DENIED, "지출 내역이 없거나 삭제 권한이 없습니다.");
         }
     }
+
+    public ExpenseDto getExpense(Long expenseId, User loginUser) {
+        if(expenseRepository.hasAuthToReadExpense(loginUser.getId(), expenseId)) {
+            return ExpenseDto.of(expenseRepository.findById(expenseId));
+        } else {
+            throw new ClientFaultException(ErrorCode.PERMISSION_DENIED, "지출 내역이 없거나 읽기 권한이 없습니다.");
+        }
+
+    }
 }

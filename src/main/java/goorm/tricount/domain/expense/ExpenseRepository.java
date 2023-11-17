@@ -84,4 +84,24 @@ public class ExpenseRepository {
             throw new ClientFaultException(ErrorCode.INVALID_REQUEST, "삭제에 실패했습니다.");
         }
     }
+
+    public Expense findById(Long expenseId) {
+        String sql = "select * from expense e " +
+                "join user u " +
+                "on e.user_id = u.id " +
+                "where e.id = ?";
+
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Expense(
+                rs.getLong("e.id"),
+                rs.getString("e.title"),
+                new User(
+                        rs.getLong("u.id"),
+                        rs.getString("u.username"),
+                        rs.getString("u.password"),
+                        rs.getString("u.nickname")
+                ),
+                rs.getBigDecimal("e.amount"),
+                rs.getDate("e.date").toLocalDate()
+        ), expenseId);
+    }
 }

@@ -25,6 +25,14 @@ public class ExpenseController {
         return expenseService.getExpensesBySettlementId(settlementId, loginUser);
     }
 
+    @GetMapping("/{expenseId}")
+    public ExpenseDto getExpense(
+            @PathVariable Long expenseId,
+            @LoginUser User loginUser
+    ) {
+        return expenseService.getExpense(expenseId, loginUser);
+    }
+
     @PostMapping
     public Long addExpense(
             @RequestBody CreateExpenseRequestDto dto,
